@@ -100,10 +100,10 @@ pub struct Movement {
   movement_timer: Timer,
 }
 
-fn spawn_snake(mut commands: Commands) {
+fn spawn_snake_part(mut commands: Commands, position: Vec3) {
   commands.spawn((
     SpriteBundle {
-      transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+      transform: Transform::from_translation(position),
       sprite: Sprite {
         // color: Color::srgba_u8(20, 33, 18, 255),
         color: Color::srgba_u8(231, 161, 176 , 255), // piglet version
@@ -121,6 +121,10 @@ fn spawn_snake(mut commands: Commands) {
     Collision,
     Name::new("Snake"),
   ));
+}
+
+fn spawn_snake(mut commands: Commands) {
+  spawn_snake_part(commands, Vec3::new(0.0, 0.0, 0.0));
 }
 
 fn move_snake(
@@ -204,7 +208,6 @@ fn random_apple_location(query: Query<&Transform>) -> Vec3 {
   let mut y: f32;
   let mut z: f32;
   let mut flag;
-  info!("run -----");
   loop {
     x = rand::thread_rng().gen_range(-31..31) as f32 * 20.0;
     y = rand::thread_rng().gen_range(-17..17) as f32 * 20.0;
@@ -222,13 +225,13 @@ fn random_apple_location(query: Query<&Transform>) -> Vec3 {
 
 fn collision_check(
   mut commands: Commands,
-  apple_query: Query<(&Transform, &Sprite, Entity), With<Apple>>,
-  snake_query: Query<(&Transform, &Sprite, &Snake)>,
-  wall_query: Query<(&Transform, &Sprite, &Wall)>
+  apple_query: Query<(&Transform, Entity), With<Apple>>,
+  snake_query: Query<(&Transform, &Snake)>,
+  wall_query: Query<(&Transform, &Wall)>
 ) {
-  let (snake_transform, _, _) = snake_query.single();
+  let (snake_transform, _) = snake_query.single();
   
-  if let Ok((apple_transform, _, apple_entity)) = apple_query.get_single() {
+  if let Ok((apple_transform, apple_entity)) = apple_query.get_single() {
     if snake_transform.translation.x == apple_transform.translation.x &&
       snake_transform.translation.y == apple_transform.translation.y {
       
@@ -239,7 +242,7 @@ fn collision_check(
     }
   }
 
-  for (transform, sprite, _) in &wall_query {
+  for (transform, _) in &wall_query {
     // 0.0 is basically center
     if (transform.translation.x != 0.0 && snake_transform.translation.x == transform.translation.x) ||
       (transform.translation.y != 0.0 && snake_transform.translation.y == transform.translation.y) {
